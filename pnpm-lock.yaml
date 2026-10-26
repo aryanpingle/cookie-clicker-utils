@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: '22'
         version: 22.20.5
+      chalk:
+        specifier: ^6.0.1
+        version: 6.0.1
       prettier:
         specifier: 3.9.10
         version: 3.9.10
@@ -302,6 +305,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  chalk@6.0.1:
+    resolution: {integrity: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==}
+    engines: {node: '>=22'}
+
   esbuild@0.28.2:
     resolution: {integrity: sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA==}
     engines: {node: '>=18'}
@@ -473,6 +480,8 @@ snapshots:
 
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
+
+  chalk@6.0.1: {}
 
   esbuild@0.28.2:
     optionalDependencies:
