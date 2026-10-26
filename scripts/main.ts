@@ -10,14 +10,20 @@ import type { ParsedSavefile } from '../src/types.js';
 import { parseSavefile } from './utils.js';
 import { getFrontierUpgrades } from '../src/upgrades/unlocks/index.js';
 import { AllUpgrades } from '../src/upgrades/index.js';
+import { Timer } from './timer.js';
 
 const game = parseSavefile('default');
+
+const timer = new Timer();
+timer.start();
 
 const MAXTURNS = 100;
 const MAXTIME = 15 * 60;
 
+const NO_UPGRADES = new Array(game.upgrades.length).fill('0').join('');
+
 type Entry = {
-    path: string;
+    path: string[];
     cps: number;
     time: number;
 };
@@ -25,27 +31,31 @@ type Entry = {
 // Path: B1,B2,U1,...
 // UID: B1#2B2#1U1#1...
 
-function generateUID(path: string) {
-    const choices = path.split(',');
+function _generateUID(choices: string[]) {
     const count: Record<string, number> = {};
+    timer.start('uid1');
     choices.forEach((choice) => {
         if (!count[choice]) count[choice] = 0;
         count[choice]++;
     });
+    timer.stop();
+
+    timer.start('uid2');
     const uid = Object.entries(count)
         .map(([a, b]) => `${a}#${b}`)
         .sort()
         .join('');
+    timer.stop();
     return uid;
 }
+const generateUID = timer.withTimer('generateUID', _generateUID);
 
-function applyPath(game: ParsedSavefile, path: string) {
-    for (const buildingInfo of Object.values(game.buildings)) {
+function _applyPath(game: ParsedSavefile, choices: string[]) {
+    for (const buildingInfo of game.buildings) {
         buildingInfo.currentUnits = 0;
     }
-    game.upgrades = new Array(game.upgrades.length).fill('0').join('');
+    game.upgrades = NO_UPGRADES;
 
-    const choices = path.split(',');
     choices.forEach((choice) => {
         const type = choice[0];
         const idx = parseInt(choice.substring(1));
@@ -53,34 +63,40 @@ function applyPath(game: ParsedSavefile, path: string) {
             const buildingInfo = game.buildings[idx]!;
             buildingInfo.currentUnits++;
         } else {
+            timer.start('addUpgradeByIndex');
             addUpgradeByIndex(game, idx);
+            timer.stop();
         }
     });
 }
+const applyPath = timer.withTimer('applyPath', _applyPath);
 
 function tryAddingEntry(entry: Entry) {
     const hash = generateUID(entry.path);
     if (Object.hasOwn(newResults, hash)) {
         const prevEntry = newResults[hash]!;
         if (prevEntry.time > entry.time) {
-            newResults[hash] = entry;
+            newResults[hash] = { ...entry, path: [...entry.path] };
         } else {
             // noop
         }
     } else {
-        newResults[hash] = entry;
+        newResults[hash] = { ...entry, path: [...entry.path] };
     }
 }
 
 function generatePossibilities(
     game: ParsedSavefile,
-    path: string,
+    path: string[],
     elapsedTime: number,
 ) {
     // Assume that the start is valid. Only consideration should be while generating a new possibility.
+    timer.start('Calculate current CPS');
     const currentCps = calculateCps(game, elapsedTime);
+    timer.stop();
 
     // Consider each building
+    timer.start('Consider each building');
     for (
         let buildingIdx = 0;
         buildingIdx < game.buildings.length;
@@ -100,11 +116,12 @@ function generatePossibilities(
 
         // Purchase the building
         buildingInfo.currentUnits++;
+        path.push(`B${buildingIdx}`);
 
         const newCps = calculateCps(game, elapsedTime + timeInSeconds);
 
         const result: Entry = {
-            path: path + (path.length ? ',' : '') + `B${buildingIdx}`,
+            path: path,
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
@@ -112,15 +129,17 @@ function generatePossibilities(
 
         // Remove the building
         buildingInfo.currentUnits--;
+        path.pop();
     }
+    timer.stop();
 
     // Consider upgrades
 
+    timer.start('getFrontierUpgrades');
     const upgradesWithPrices = getFrontierUpgrades(game);
-    // console.log(
-    //     'options',
-    //     upgradesWithPrices.map((e) => e[0]),
-    // );
+    timer.stop();
+
+    timer.start('Check all upgrades');
     upgradesWithPrices.forEach(([upgradeName, cost]) => {
         const upgradeIdx = AllUpgrades[upgradeName].id;
 
@@ -130,85 +149,26 @@ function generatePossibilities(
         if (elapsedTime + timeInSeconds > MAXTIME) return;
 
         addUpgrade(game, upgradeName);
+        path.push(`U${upgradeIdx}`);
 
         const newCps = calculateCps(game, elapsedTime + timeInSeconds);
 
         const result: Entry = {
-            path: path + (path.length ? ',' : '') + `U${upgradeIdx}`,
+            path: path,
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
         tryAddingEntry(result);
 
         removeUpgrade(game, upgradeName);
+        path.pop();
     });
-
-    // // Cursor
-    // {
-    //     for (const { cost, idx } of [
-    //         { cost: 100, idx: 0 },
-    //         { cost: 500, idx: 1 },
-    //         { cost: 10e3, idx: 2 },
-    //     ]) {
-    //         if (hasUpgrade(game, idx)) continue;
-    //         if (game.buildings.Cursor.currentUnits === 0) continue;
-
-    //         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
-
-    //         // Check time constraint
-    //         if (elapsedTime + timeInSeconds > MAXTIME) continue;
-
-    //         addUpgrade(game, idx);
-
-    //         const newCps = calculateCps(game, elapsedTime + timeInSeconds);
-
-    //         const result: Entry = {
-    //             path: path + (path.length ? ',' : '') + `U${idx}`,
-    //             cps: newCps,
-    //             time: elapsedTime + timeInSeconds,
-    //         };
-    //         tryAddingEntry(result);
-
-    //         removeUpgrade(game, idx);
-    //     }
-    // }
-
-    // // Grandma
-    // {
-    //     for (const { cost, idx } of [
-    //         { cost: 1e3, idx: 7 },
-    //         { cost: 5e3, idx: 8 },
-    //         { cost: 50e3, idx: 9 },
-    //     ]) {
-    //         if (hasUpgrade(game, idx)) continue;
-    //         if (game.buildings.Grandma.currentUnits === 0) continue;
-
-    //         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
-
-    //         // Check time constraint
-    //         if (elapsedTime + timeInSeconds > MAXTIME) continue;
-
-    //         addUpgrade(game, idx);
-
-    //         const newCps = calculateCps(game, elapsedTime + timeInSeconds);
-
-    //         const result: Entry = {
-    //             path: path + (path.length ? ',' : '') + `U${idx}`,
-    //             cps: newCps,
-    //             time: elapsedTime + timeInSeconds,
-    //         };
-    //         tryAddingEntry(result);
-
-    //         removeUpgrade(game, idx);
-    //     }
-    // }
+    timer.stop();
 }
-
-const firstPath = '';
 
 let oldResults: Record<string, Entry> = {
     '': {
-        path: firstPath,
+        path: [],
         cps: calculateCps(game),
         time: 0,
     },
@@ -219,7 +179,10 @@ const totalResults: Record<string, Entry> = {};
 for (let turn = 1; turn <= MAXTURNS; ++turn) {
     for (const result of Object.values(oldResults)) {
         applyPath(game, result.path);
+
+        timer.start('generatePossibilities');
         generatePossibilities(game, result.path, result.time);
+        timer.stop();
     }
 
     Object.assign(totalResults, newResults);
@@ -227,9 +190,12 @@ for (let turn = 1; turn <= MAXTURNS; ++turn) {
     oldResults = newResults;
     newResults = {};
 }
+timer.stop();
 
 const t = Object.values(totalResults);
 t.sort((a, b) => a.time - b.time); // sort by time (secondary)
 t.sort((a, b) => -(a.cps - b.cps)); // sort by cps (primary)
 console.log(t.slice(0, 5));
-console.log(t.length);
+
+timer.stop();
+timer.print();
