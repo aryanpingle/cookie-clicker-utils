@@ -17,6 +17,9 @@ const game = parseSavefile('default');
 const timer = new Timer();
 timer.start();
 
+let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
+    timer.withTimer(func);
+
 const MAXTURNS = 100;
 const MAXTIME = 15 * 60;
 
@@ -31,26 +34,21 @@ type Entry = {
 // Path: B1,B2,U1,...
 // UID: B1#2B2#1U1#1...
 
-function _generateUID(choices: string[]) {
+function generateUID(choices: string[]) {
     const count: Record<string, number> = {};
-    timer.start('uid1');
     choices.forEach((choice) => {
         if (!count[choice]) count[choice] = 0;
         count[choice]++;
     });
-    timer.stop();
 
-    timer.start('uid2');
     const uid = Object.entries(count)
         .map(([a, b]) => `${a}#${b}`)
         .sort()
         .join('');
-    timer.stop();
     return uid;
 }
-const generateUID = timer.withTimer('generateUID', _generateUID);
 
-function _applyPath(game: ParsedSavefile, choices: string[]) {
+function applyPath(game: ParsedSavefile, choices: string[]) {
     for (const buildingInfo of game.buildings) {
         buildingInfo.currentUnits = 0;
     }
@@ -63,16 +61,13 @@ function _applyPath(game: ParsedSavefile, choices: string[]) {
             const buildingInfo = game.buildings[idx]!;
             buildingInfo.currentUnits++;
         } else {
-            timer.start('addUpgradeByIndex');
-            addUpgradeByIndex(game, idx);
-            timer.stop();
+            t(addUpgradeByIndex)(game, idx);
         }
     });
 }
-const applyPath = timer.withTimer('applyPath', _applyPath);
 
 function tryAddingEntry(entry: Entry) {
-    const hash = generateUID(entry.path);
+    const hash = t(generateUID)(entry.path);
     if (Object.hasOwn(newResults, hash)) {
         const prevEntry = newResults[hash]!;
         if (prevEntry.time > entry.time) {
@@ -91,9 +86,7 @@ function generatePossibilities(
     elapsedTime: number,
 ) {
     // Assume that the start is valid. Only consideration should be while generating a new possibility.
-    timer.start('Calculate current CPS');
-    const currentCps = calculateCps(game, elapsedTime);
-    timer.stop();
+    const currentCps = t(calculateCps)(game, elapsedTime);
 
     // Consider each building
     timer.start('Consider each building');
@@ -118,7 +111,7 @@ function generatePossibilities(
         buildingInfo.currentUnits++;
         path.push(`B${buildingIdx}`);
 
-        const newCps = calculateCps(game, elapsedTime + timeInSeconds);
+        const newCps = t(calculateCps)(game, elapsedTime + timeInSeconds);
 
         const result: Entry = {
             path: path,
@@ -135,9 +128,7 @@ function generatePossibilities(
 
     // Consider upgrades
 
-    timer.start('getFrontierUpgrades');
-    const upgradesWithPrices = getFrontierUpgrades(game);
-    timer.stop();
+    const upgradesWithPrices = t(getFrontierUpgrades)(game);
 
     timer.start('Check all upgrades');
     upgradesWithPrices.forEach(([upgradeName, cost]) => {
@@ -148,10 +139,10 @@ function generatePossibilities(
         // Check time constraint
         if (elapsedTime + timeInSeconds > MAXTIME) return;
 
-        addUpgrade(game, upgradeName);
+        t(addUpgrade)(game, upgradeName);
         path.push(`U${upgradeIdx}`);
 
-        const newCps = calculateCps(game, elapsedTime + timeInSeconds);
+        const newCps = t(calculateCps)(game, elapsedTime + timeInSeconds);
 
         const result: Entry = {
             path: path,
@@ -178,11 +169,9 @@ const totalResults: Record<string, Entry> = {};
 
 for (let turn = 1; turn <= MAXTURNS; ++turn) {
     for (const result of Object.values(oldResults)) {
-        applyPath(game, result.path);
+        t(applyPath)(game, result.path);
 
-        timer.start('generatePossibilities');
-        generatePossibilities(game, result.path, result.time);
-        timer.stop();
+        t(generatePossibilities)(game, result.path, result.time);
     }
 
     Object.assign(totalResults, newResults);
@@ -190,12 +179,13 @@ for (let turn = 1; turn <= MAXTURNS; ++turn) {
     oldResults = newResults;
     newResults = {};
 }
-timer.stop();
 
-const t = Object.values(totalResults);
-t.sort((a, b) => a.time - b.time); // sort by time (secondary)
-t.sort((a, b) => -(a.cps - b.cps)); // sort by cps (primary)
-console.log(t.slice(0, 5));
+timer.start('Print results');
+const h = Object.values(totalResults);
+h.sort((a, b) => a.time - b.time); // sort by time (secondary)
+h.sort((a, b) => -(a.cps - b.cps)); // sort by cps (primary)
+console.log(h.slice(0, 5));
+timer.stop();
 
 timer.stop();
 timer.print();
