@@ -96,16 +96,14 @@ function generatePossibilities(
         ++buildingIdx
     ) {
         const buildingInfo = game.buildings[buildingIdx]!;
-        const baseCost = getBaseCost(buildingIdx);
+        const baseCost = t(getBaseCost)(buildingIdx);
 
-        const cost = getNextUnitCost(baseCost, buildingInfo.currentUnits);
+        const cost = t(getNextUnitCost)(baseCost, buildingInfo.currentUnits);
 
         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
 
         // Check time constraint
-        if (elapsedTime + timeInSeconds > MAXTIME) {
-            continue;
-        }
+        if (elapsedTime + timeInSeconds > MAXTIME) continue;
 
         // Purchase the building
         buildingInfo.currentUnits++;
@@ -118,7 +116,7 @@ function generatePossibilities(
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        tryAddingEntry(result);
+        t(tryAddingEntry)(result);
 
         // Remove the building
         buildingInfo.currentUnits--;
