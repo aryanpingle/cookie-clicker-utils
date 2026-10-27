@@ -1,5 +1,6 @@
 import { getBaseCps } from '../baseCps.js';
 import { B } from '../constants.js';
+import { timer } from '../timer.js';
 import type { ParsedSavefile } from '../types.js';
 import { getCursorCps } from './cursor.js';
 import { getFarmCps } from './farm.js';
@@ -9,13 +10,13 @@ export function calculateCps(game: ParsedSavefile, elapsedTime: number = 0) {
     let totalCps = 0;
 
     // Cursor
-    totalCps += getCursorCps(game);
+    totalCps += timer.withTimer(getCursorCps)(game);
 
     // Grandma
-    totalCps += getGrandmaCps(game);
+    totalCps += timer.withTimer(getGrandmaCps)(game);
 
     // Farm
-    totalCps += getFarmCps(game);
+    totalCps += timer.withTimer(getFarmCps)(game);
 
     // Temporary: All the rest
     for (let i = B.Farm + 1; i < game.buildings.length; ++i) {

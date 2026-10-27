@@ -14,18 +14,17 @@ import type { ParsedSavefile } from '../src/types.js';
 import { parseSavefile } from './utils.js';
 import { getFrontierUpgrades } from '../src/upgrades/unlocks/index.js';
 import { AllUpgrades } from '../src/upgrades/index.js';
-import { Timer } from './timer.js';
+import { timer } from '../src/timer.js';
 
 const game = parseSavefile('default');
 
-const timer = new Timer();
 timer.start();
 
 let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
     timer.withTimer(func);
 
 const MAXTURNS = 100;
-const MAXTIME = 15 * 60;
+const MAXTIME = 18 * 60;
 const BIT_FOR_BUILDING = 1;
 
 type Entry = {
@@ -165,7 +164,7 @@ function generatePossibilities(
 let oldResults: Record<string, Entry> = {
     '': {
         path: [],
-        cps: calculateCps(game),
+        cps: t(calculateCps)(game),
         time: 0,
     },
 };

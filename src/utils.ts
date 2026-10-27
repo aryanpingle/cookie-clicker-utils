@@ -1,4 +1,3 @@
-
 /**
  * Round a number to two significant digits.
  *
@@ -9,6 +8,7 @@
  */
 
 export function twoSignificantDigits(val: number) {
-    const digitFactor = Math.pow(10, Math.ceil(Math.log(Math.ceil(val)) / Math.LN10)) / 100;
+    const digitFactor =
+        Math.pow(10, Math.ceil(Math.log(Math.ceil(val)) / Math.LN10)) / 100;
     return Math.round(val / digitFactor) * digitFactor;
 }

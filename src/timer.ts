@@ -198,3 +198,5 @@ function printObjectTree(
         printObjectTree(node, newPrefix, lines);
     });
 }
+
+export const timer = new Timer();
