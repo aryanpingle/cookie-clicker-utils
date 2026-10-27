@@ -10,6 +10,7 @@ type TimeNode = {
     name: string;
     startTime: number;
     duration: number;
+    count: number;
     nodes: TimeNodeRecord;
 };
 
@@ -24,6 +25,7 @@ export class Timer {
             name: ROOT_NAME,
             startTime: 0,
             duration: 0,
+            count: 0,
             nodes: {},
         };
         this.current = this.root;
@@ -40,6 +42,7 @@ export class Timer {
             name: name,
             startTime: 0,
             duration: 0,
+            count: 0,
             nodes: {},
         };
         this.current.nodes[name] = node;
@@ -52,11 +55,13 @@ export class Timer {
         if (name) {
             const node = this.getOrCreateNode(name);
             node.startTime = startTime;
+            node.count++;
 
             this.path.push(name);
             this.current = node;
         } else {
             this.root.startTime = startTime;
+            this.root.count++;
         }
     }
 
@@ -100,14 +105,30 @@ export class Timer {
 
             const durationStr = inMs(childNode.duration);
 
+            const childCallCount = childNode.count;
+
+            const avgDurationStr = inMs(childNode.duration / childCallCount);
+
             const percent = Math.round(
                 (100 * childNode.duration) / CURRENT_NODE_DURATION,
             );
 
-            tableRows.push([treeStr, durationStr, `${percent}%`]);
+            tableRows.push([
+                treeStr,
+                durationStr,
+                String(childCallCount),
+                avgDurationStr,
+                `${percent}%`,
+            ]);
         }
 
-        tableRows.push(['Total', inMs(CURRENT_NODE_DURATION), '100%']);
+        tableRows.push([
+            'Total',
+            inMs(CURRENT_NODE_DURATION),
+            String(this.current.count),
+            inMs(CURRENT_NODE_DURATION / this.current.count),
+            '100%',
+        ]);
 
         const tableName =
             this.path.length <= 1
@@ -118,6 +139,8 @@ export class Timer {
                 0: { alignment: 'left' },
                 1: { alignment: 'right' },
                 2: { alignment: 'right' },
+                3: { alignment: 'right' },
+                4: { alignment: 'right' },
             },
             header: {
                 content: tableName,
