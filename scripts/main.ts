@@ -25,7 +25,7 @@ let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
     timer.withTimer(func);
 
 const MAXTURNS = 100;
-const MAXTIME = 20 * 60;
+const MAXTIME = 15 * 60;
 const BIT_FOR_BUILDING = 1;
 
 type Entry = {
