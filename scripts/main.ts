@@ -25,10 +25,11 @@ let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
     timer.withTimer(func);
 
 const MAXTURNS = 100;
-const MAXTIME = 18 * 60;
+const MAXTIME = 20 * 60;
+const BIT_FOR_BUILDING = 1;
 
 type Entry = {
-    path: string[];
+    path: number[];
     cps: number;
     time: number;
 };
@@ -52,16 +53,16 @@ function generateUID(game: ParsedSavefile) {
     return arr.map(String).join(';');
 }
 
-function applyPath(game: ParsedSavefile, choices: string[]) {
+function applyPath(game: ParsedSavefile, path: number[]) {
     for (const buildingInfo of game.buildings) {
         buildingInfo.currentUnits = 0;
     }
     game.upgrades.forEach((_, i) => (game.upgrades[i] = 0));
 
-    choices.forEach((choice) => {
-        const type = choice[0];
-        const idx = parseInt(choice.substring(1));
-        if (type === 'B') {
+    path.forEach((choice) => {
+        const type = choice & 1;
+        const idx = choice >> 1;
+        if (type === BIT_FOR_BUILDING) {
             const buildingInfo = game.buildings[idx]!;
             buildingInfo.currentUnits++;
         } else {
@@ -88,7 +89,7 @@ function tryAddingEntry(game: ParsedSavefile, entry: Entry) {
 
 function generatePossibilities(
     game: ParsedSavefile,
-    path: string[],
+    path: number[],
     elapsedTime: number,
 ) {
     // Assume that the start is valid. Only consideration should be while generating a new possibility.
@@ -113,7 +114,7 @@ function generatePossibilities(
 
         // Purchase the building
         buildingInfo.currentUnits++;
-        path.push(`B${buildingIdx}`);
+        path.push((buildingIdx << 1) + BIT_FOR_BUILDING);
 
         const newCps = t(calculateCps)(game, elapsedTime + timeInSeconds);
 
@@ -144,7 +145,7 @@ function generatePossibilities(
         if (elapsedTime + timeInSeconds > MAXTIME) return;
 
         t(addUpgrade)(game, upgradeName);
-        path.push(`U${upgradeIdx}`);
+        path.push((upgradeIdx << 1) + (1 - BIT_FOR_BUILDING));
 
         const newCps = t(calculateCps)(game, elapsedTime + timeInSeconds);
 

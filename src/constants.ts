@@ -2,7 +2,7 @@ export const UNIT_COST_MULT = 1.15;
 export const NUM_BUILDINGS = 20;
 export const NUM_UPGRADES = 876;
 
-export const UPGRADE_CHUNK_SIZE = 31;
+export const UPGRADE_CHUNK_SIZE = 30;
 export const NUM_UPGRADE_CHUNKS = Math.ceil(NUM_UPGRADES / UPGRADE_CHUNK_SIZE);
 
 export const BUILDING_NAMES = [
