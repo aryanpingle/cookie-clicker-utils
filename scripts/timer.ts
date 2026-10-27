@@ -1,9 +1,13 @@
 import chalk from 'chalk';
+import { writeFileSync } from 'node:fs';
 import { table } from 'table';
+
+const ROOT_NAME = 'Program';
 
 type TimeNodeRecord = Record<string, TimeNode>;
 
 type TimeNode = {
+    name: string;
     startTime: number;
     duration: number;
     nodes: TimeNodeRecord;
@@ -13,15 +17,18 @@ export class Timer {
     root: TimeNode;
     path: string[];
     current: TimeNode;
+    stdout: string[];
 
     constructor() {
         this.root = {
+            name: ROOT_NAME,
             startTime: 0,
             duration: 0,
             nodes: {},
         };
         this.current = this.root;
         this.path = [];
+        this.stdout = [];
     }
 
     private getOrCreateNode(name: string): TimeNode {
@@ -30,6 +37,7 @@ export class Timer {
 
     private createNode(name: string): TimeNode {
         const node: TimeNode = {
+            name: name,
             startTime: 0,
             duration: 0,
             nodes: {},
@@ -77,29 +85,34 @@ export class Timer {
         };
     }
 
-    print() {
+    private printCurrentTable() {
+        const children = Object.values(this.current.nodes);
+        if (children.length === 0) return;
+
+        const CURRENT_NODE_DURATION = this.current.duration;
+
         const tableRows: string[][] = [];
 
-        const programTime = this.root.duration;
+        for (const childNode of children) {
+            const treeStrLines: string[] = [childNode.name];
+            printObjectTree(childNode, '', treeStrLines);
+            const treeStr = treeStrLines.join('\n');
 
-        for (const key in this.root.nodes) {
-            const node = this.root.nodes[key]!;
+            const durationStr = inMs(childNode.duration);
 
-            const lines: string[] = [key];
-            printObjectTree(node, '', lines);
+            const percent = Math.round(
+                (100 * childNode.duration) / CURRENT_NODE_DURATION,
+            );
 
-            const treeStr = lines.join('\n');
-
-            const percent = Math.round((100 * node.duration) / programTime);
-            tableRows.push([treeStr, inMs(node.duration), `${percent}%`]);
+            tableRows.push([treeStr, durationStr, `${percent}%`]);
         }
 
-        tableRows.push([
-            chalk.bold('Total'),
-            chalk.bold(inMs(programTime)),
-            chalk.bold('100%'),
-        ]);
+        tableRows.push(['Total', inMs(CURRENT_NODE_DURATION), '100%']);
 
+        const tableName =
+            this.path.length <= 1
+                ? this.current.name
+                : this.path.slice(-2).join('\n▼\n');
         const tableStr = table(tableRows, {
             columns: {
                 0: { alignment: 'left' },
@@ -107,11 +120,33 @@ export class Timer {
                 2: { alignment: 'right' },
             },
             header: {
-                content: 'Timing',
+                content: tableName,
                 alignment: 'center',
             },
         });
-        console.log(tableStr);
+        this.stdout.push(tableStr);
+    }
+
+    private printCurrentRecursively() {
+        this.printCurrentTable();
+
+        for (const childNode of Object.values(this.current.nodes)) {
+            // Go to the node
+            this.path.push(childNode.name);
+            this.current = childNode;
+
+            this.printCurrentRecursively();
+
+            this.goToParent();
+        }
+    }
+
+    print(filename: string) {
+        this.stdout = [];
+
+        this.printCurrentRecursively();
+
+        writeFileSync(filename, this.stdout.join('\n'));
     }
 }
 

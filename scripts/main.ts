@@ -188,4 +188,4 @@ console.log(h.slice(0, 5));
 timer.stop();
 
 timer.stop();
-timer.print();
+timer.print('.tmp/timing.txt');
