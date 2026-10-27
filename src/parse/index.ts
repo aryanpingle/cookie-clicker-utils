@@ -3,6 +3,7 @@ import { parseBuildings, serializeBuildings } from './buildings.js';
 import { parseMisc, serializeMisc } from './misc.js';
 import { parsePreferences, serializePreferences } from './preferences.js';
 import { parseRunData, serializeRunData } from './run.js';
+import { parseUpgradestring, serializeUpgrades } from './upgrades.js';
 
 export function parseDecodedSavestring(decodedSavestring: string) {
     const pipes = decodedSavestring.split('|');
@@ -19,7 +20,8 @@ export function parseDecodedSavestring(decodedSavestring: string) {
 
     const buildings = parseBuildings(pipes[5]!);
 
-    const upgrades = pipes[6]!;
+    const upgrades = parseUpgradestring(pipes[6]!);
+
     const achievements = pipes[7]!;
     const buffs = pipes[8]!;
 
@@ -45,7 +47,7 @@ export function serializeParsedSavestring(parsedData: ParsedSavefile): string {
         serializePreferences(parsedData.preferences),
         serializeMisc(parsedData.misc),
         serializeBuildings(parsedData.buildings),
-        parsedData.upgrades,
+        serializeUpgrades(parsedData.upgrades),
         parsedData.achievements,
         parsedData.buffs,
         '',

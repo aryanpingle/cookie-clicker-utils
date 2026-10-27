@@ -137,7 +137,7 @@ export type ParsedSavefile = {
     preferences: PreferencesInfo;
     misc: MiscGameData;
     buildings: Array<BuildingInfo>;
-    upgrades: string;
+    upgrades: number[];
     achievements: string;
     buffs: string;
 };

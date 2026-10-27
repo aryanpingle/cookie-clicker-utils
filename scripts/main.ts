@@ -1,5 +1,9 @@
 import { getBaseCost } from '../src/baseCost.js';
-import { getNextUnitCost } from '../src/constants.js';
+import {
+    getNextUnitCost,
+    NUM_BUILDINGS,
+    NUM_UPGRADE_CHUNKS,
+} from '../src/constants.js';
 import { calculateCps } from '../src/cps/index.js';
 import {
     addUpgrade,
@@ -21,9 +25,7 @@ let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
     timer.withTimer(func);
 
 const MAXTURNS = 100;
-const MAXTIME = 15 * 60;
-
-const NO_UPGRADES = new Array(game.upgrades.length).fill('0').join('');
+const MAXTIME = 18 * 60;
 
 type Entry = {
     path: string[];
@@ -34,25 +36,27 @@ type Entry = {
 // Path: B1,B2,U1,...
 // UID: B1#2B2#1U1#1...
 
-function generateUID(choices: string[]) {
-    const count: Record<string, number> = {};
-    choices.forEach((choice) => {
-        if (!count[choice]) count[choice] = 0;
-        count[choice]++;
+function generateUID(game: ParsedSavefile) {
+    let arr = new Array(NUM_BUILDINGS + NUM_UPGRADE_CHUNKS);
+
+    // Upgrades
+    game.upgrades.forEach((chunk, index) => {
+        arr[index] = chunk;
     });
 
-    const uid = Object.entries(count)
-        .map(([a, b]) => `${a}#${b}`)
-        .sort()
-        .join('');
-    return uid;
+    // Buildings
+    game.buildings.forEach((building, index) => {
+        arr[NUM_UPGRADE_CHUNKS + index] = building.currentUnits;
+    });
+
+    return arr.map(String).join(';');
 }
 
 function applyPath(game: ParsedSavefile, choices: string[]) {
     for (const buildingInfo of game.buildings) {
         buildingInfo.currentUnits = 0;
     }
-    game.upgrades = NO_UPGRADES;
+    game.upgrades.forEach((_, i) => (game.upgrades[i] = 0));
 
     choices.forEach((choice) => {
         const type = choice[0];
@@ -66,15 +70,17 @@ function applyPath(game: ParsedSavefile, choices: string[]) {
     });
 }
 
-function tryAddingEntry(entry: Entry) {
-    const hash = t(generateUID)(entry.path);
+function tryAddingEntry(game: ParsedSavefile, entry: Entry) {
+    const hash = t(generateUID)(game);
     if (Object.hasOwn(newResults, hash)) {
+        timer.start('try replacing entry');
         const prevEntry = newResults[hash]!;
         if (prevEntry.time > entry.time) {
             newResults[hash] = { ...entry, path: [...entry.path] };
         } else {
             // noop
         }
+        timer.stop();
     } else {
         newResults[hash] = { ...entry, path: [...entry.path] };
     }
@@ -116,7 +122,7 @@ function generatePossibilities(
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        t(tryAddingEntry)(result);
+        t(tryAddingEntry)(game, result);
 
         // Remove the building
         buildingInfo.currentUnits--;
@@ -147,7 +153,7 @@ function generatePossibilities(
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        tryAddingEntry(result);
+        tryAddingEntry(game, result);
 
         removeUpgrade(game, upgradeName);
         path.pop();
