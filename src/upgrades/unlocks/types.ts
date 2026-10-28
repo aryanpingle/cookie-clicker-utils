@@ -1,3 +1,1 @@
-import type { UpgradeName } from '../types.js';
-
-export type UpgradeNameWithCost = [UpgradeName, number];
+export type UpgradeIdWithCost = [number, number];

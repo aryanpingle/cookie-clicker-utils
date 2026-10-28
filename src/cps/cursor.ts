@@ -1,7 +1,7 @@
 import { getBaseCps } from '../baseCps.js';
 import { B } from '../constants.js';
 import type { ParsedSavefile } from '../types.js';
-import { hasUpgrade, hasUpgradeByIndex } from '../upgrade.js';
+import { hasUpgrade } from '../upgrade.js';
 import { U } from '../upgrades/gen.js';
 
 export function getCursorCps(game: ParsedSavefile) {
@@ -11,48 +11,48 @@ export function getCursorCps(game: ParsedSavefile) {
     let cps = baseCps;
     let addition = 0;
 
-    if (hasUpgradeByIndex(game, U.REINFORCED_MEMBRANE)) cps *= 2;
-    if (hasUpgradeByIndex(game, U.CARPAL_TUNNEL_PREVENTION_CREAM)) cps *= 2;
-    if (hasUpgradeByIndex(game, U.AMBIDEXTROUS)) cps *= 2;
+    if (hasUpgrade(game, U.REINFORCED_MEMBRANE)) cps *= 2;
+    if (hasUpgrade(game, U.CARPAL_TUNNEL_PREVENTION_CREAM)) cps *= 2;
+    if (hasUpgrade(game, U.AMBIDEXTROUS)) cps *= 2;
 
-    if (hasUpgradeByIndex(game, U.THOUSAND_FINGERS)) {
+    if (hasUpgrade(game, U.THOUSAND_FINGERS)) {
         for (const buildingInfo of game.buildings) {
             if (B.Cursor === 0) continue;
             addition += 0.1 * buildingInfo.currentUnits;
         }
     }
 
-    if (hasUpgradeByIndex(game, U.MILLION_FINGERS)) {
+    if (hasUpgrade(game, U.MILLION_FINGERS)) {
         addition *= 5;
     }
-    if (hasUpgradeByIndex(game, U.BILLION_FINGERS)) {
+    if (hasUpgrade(game, U.BILLION_FINGERS)) {
         addition *= 10;
     }
-    if (hasUpgradeByIndex(game, U.TRILLION_FINGERS)) {
+    if (hasUpgrade(game, U.TRILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.QUADRILLION_FINGERS)) {
+    if (hasUpgrade(game, U.QUADRILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.QUINTILLION_FINGERS)) {
+    if (hasUpgrade(game, U.QUINTILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.SEXTILLION_FINGERS)) {
+    if (hasUpgrade(game, U.SEXTILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.SEPTILLION_FINGERS)) {
+    if (hasUpgrade(game, U.SEPTILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.OCTILLION_FINGERS)) {
+    if (hasUpgrade(game, U.OCTILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.NONILLION_FINGERS)) {
+    if (hasUpgrade(game, U.NONILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.DECILLION_FINGERS)) {
+    if (hasUpgrade(game, U.DECILLION_FINGERS)) {
         addition *= 20;
     }
-    if (hasUpgradeByIndex(game, U.UNDECILLION_FINGERS)) {
+    if (hasUpgrade(game, U.UNDECILLION_FINGERS)) {
         addition *= 20;
     }
 

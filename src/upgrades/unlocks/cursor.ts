@@ -1,34 +1,34 @@
 import { B } from '../../constants.js';
 import type { ParsedSavefile } from '../../types.js';
-import type { UpgradeName } from '../types.js';
-import type { UpgradeNameWithCost } from './types.js';
+import { U } from '../gen.js';
+import type { UpgradeIdWithCost } from './types.js';
 import { firstUpgradeYouDontHave } from './utils.js';
 
 export function getFrontierCursorUpgrades(
     game: ParsedSavefile,
-): UpgradeNameWithCost[] {
-    const arr: UpgradeNameWithCost[] = [];
+): UpgradeIdWithCost[] {
+    const arr: UpgradeIdWithCost[] = [];
 
     const a = firstUpgradeYouDontHave(game, B.Cursor, [
-        'Reinforced index finger',
-        'Carpal tunnel prevention cream',
-        'Ambidextrous',
+        U.REINFORCED_INDEX_FINGER,
+        U.CARPAL_TUNNEL_PREVENTION_CREAM,
+        U.AMBIDEXTROUS,
     ]);
     if (a) arr.push(a);
 
     const b = firstUpgradeYouDontHave(game, B.Cursor, [
-        'Thousand fingers',
-        'Million fingers',
-        'Billion fingers',
-        'Trillion fingers',
-        'Quadrillion fingers',
-        'Quintillion fingers',
-        'Sextillion fingers',
-        'Septillion fingers',
-        'Octillion fingers',
-        'Nonillion fingers',
-        'Decillion fingers',
-        'Undecillion fingers',
+        U.THOUSAND_FINGERS,
+        U.MILLION_FINGERS,
+        U.BILLION_FINGERS,
+        U.TRILLION_FINGERS,
+        U.QUADRILLION_FINGERS,
+        U.QUINTILLION_FINGERS,
+        U.SEXTILLION_FINGERS,
+        U.SEPTILLION_FINGERS,
+        U.OCTILLION_FINGERS,
+        U.NONILLION_FINGERS,
+        U.DECILLION_FINGERS,
+        U.UNDECILLION_FINGERS,
     ]);
     if (b) arr.push(b);
 

@@ -1,9 +1,3 @@
-import type { AllUpgrades } from './index.js';
-
-export type UpgradeName = keyof typeof AllUpgrades;
-
-export type UpgradeId = (typeof AllUpgrades)[UpgradeName];
-
 type TieredUpgrade = {
     id: number;
     type: 'TieredUpgrade';
@@ -23,4 +17,4 @@ type BasicUpgrade = {
     type: 'pingle';
 };
 
-export type Upgrade = TieredUpgrade | BasicUpgrade;
+export type Upgrade = TieredUpgrade | BasicUpgrade | GrandmaVariantUpgrade;

@@ -5,15 +5,10 @@ import {
     NUM_UPGRADE_CHUNKS,
 } from '../src/constants.js';
 import { calculateCps } from '../src/cps/index.js';
-import {
-    addUpgrade,
-    addUpgradeByIndex,
-    removeUpgrade,
-} from '../src/upgrade.js';
+import { addUpgrade, removeUpgrade } from '../src/upgrade.js';
 import type { ParsedSavefile } from '../src/types.js';
 import { parseSavefile } from './utils.js';
 import { getFrontierUpgrades } from '../src/upgrades/unlocks/index.js';
-import { AllUpgrades } from '../src/upgrades/index.js';
 import { timer } from '../src/timer.js';
 
 const game = parseSavefile('default');
@@ -65,7 +60,7 @@ function applyPath(game: ParsedSavefile, path: number[]) {
             const buildingInfo = game.buildings[idx]!;
             buildingInfo.currentUnits++;
         } else {
-            t(addUpgradeByIndex)(game, idx);
+            t(addUpgrade)(game, idx);
         }
     });
 }
@@ -132,15 +127,13 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
     const upgradesWithPrices = t(getFrontierUpgrades)(game);
 
     timer.start('Check all upgrades');
-    upgradesWithPrices.forEach(([upgradeName, cost]) => {
-        const upgradeIdx = AllUpgrades[upgradeName].id;
-
+    upgradesWithPrices.forEach(([upgradeIdx, cost]) => {
         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
 
         // Check time constraint
         if (elapsedTime + timeInSeconds > MAXTIME) return;
 
-        t(addUpgrade)(game, upgradeName);
+        t(addUpgrade)(game, upgradeIdx);
         path.push((upgradeIdx << 1) + (1 - BIT_FOR_BUILDING));
 
         const newCps = t(calculateCps)(game, elapsedTime + timeInSeconds);
@@ -152,7 +145,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
         };
         tryAddingEntry(game, result);
 
-        removeUpgrade(game, upgradeName);
+        removeUpgrade(game, upgradeIdx);
         path.pop();
     });
     timer.stop();
