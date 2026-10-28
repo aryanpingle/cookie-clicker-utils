@@ -31,20 +31,19 @@ type Entry = {
 // Path: B1,B2,U1,...
 // UID: B1#2B2#1U1#1...
 
+const tempArr = new Array(NUM_BUILDINGS + NUM_UPGRADE_CHUNKS);
 function generateUID(game: ParsedSavefile) {
-    let arr = new Array(NUM_BUILDINGS + NUM_UPGRADE_CHUNKS);
-
     // Upgrades
     game.upgrades.forEach((chunk, index) => {
-        arr[index] = chunk;
+        tempArr[index] = chunk;
     });
 
     // Buildings
     game.buildings.forEach((building, index) => {
-        arr[NUM_UPGRADE_CHUNKS + index] = building.currentUnits;
+        tempArr[NUM_UPGRADE_CHUNKS + index] = building.currentUnits;
     });
 
-    return arr.map(String).join(';');
+    return JSON.stringify(tempArr);
 }
 
 function applyPath(game: ParsedSavefile, path: number[]) {
@@ -143,7 +142,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        tryAddingEntry(game, result);
+        t(tryAddingEntry)(game, result);
 
         removeUpgrade(game, upgradeIdx);
         path.pop();
