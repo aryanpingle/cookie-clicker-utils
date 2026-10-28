@@ -24,7 +24,7 @@ let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
     timer.withTimer(func);
 
 const MAXTURNS = 100;
-const MAXTIME = 18 * 60;
+const MAXTIME = 20 * 60;
 const BIT_FOR_BUILDING = 1;
 
 type Entry = {
@@ -86,13 +86,10 @@ function tryAddingEntry(game: ParsedSavefile, entry: Entry) {
     }
 }
 
-function generatePossibilities(
-    game: ParsedSavefile,
-    path: number[],
-    elapsedTime: number,
-) {
-    // Assume that the start is valid. Only consideration should be while generating a new possibility.
-    const currentCps = t(calculateCps)(game, elapsedTime);
+function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
+    const currentCps = prevResult.cps;
+    const elapsedTime = prevResult.time;
+    const path = prevResult.path;
 
     // Consider each building
     timer.start('Consider each building');
@@ -175,7 +172,7 @@ for (let turn = 1; turn <= MAXTURNS; ++turn) {
     for (const result of Object.values(oldResults)) {
         t(applyPath)(game, result.path);
 
-        t(generatePossibilities)(game, result.path, result.time);
+        t(generatePossibilities)(game, result);
     }
 
     Object.assign(totalResults, newResults);
