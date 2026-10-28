@@ -13,14 +13,19 @@ import { timer } from '../src/timer.js';
 
 const game = parseSavefile('default');
 
-timer.start();
-
-let t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
-    timer.withTimer(func);
+// --- Script-level Constants
 
 const MAXTURNS = 100;
 const MAXTIME = 20 * 60;
+
+// --- Algorithm Constants
+
 const BIT_FOR_BUILDING = 1;
+
+const t = <TFunc extends (...args: any[]) => any>(func: TFunc) =>
+    timer.withTimer(func);
+
+const tempArrForUID = new Array(NUM_BUILDINGS + NUM_UPGRADE_CHUNKS);
 
 type Entry = {
     path: number[];
@@ -28,22 +33,25 @@ type Entry = {
     time: number;
 };
 
+// --- Algorithm
+
+timer.start();
+
 // Path: B1,B2,U1,...
 // UID: B1#2B2#1U1#1...
 
-const tempArr = new Array(NUM_BUILDINGS + NUM_UPGRADE_CHUNKS);
 function generateUID(game: ParsedSavefile) {
     // Upgrades
     game.upgrades.forEach((chunk, index) => {
-        tempArr[index] = chunk;
+        tempArrForUID[index] = chunk;
     });
 
     // Buildings
     game.buildings.forEach((building, index) => {
-        tempArr[NUM_UPGRADE_CHUNKS + index] = building.currentUnits;
+        tempArrForUID[NUM_UPGRADE_CHUNKS + index] = building.currentUnits;
     });
 
-    return JSON.stringify(tempArr);
+    return JSON.stringify(tempArrForUID);
 }
 
 function applyPath(game: ParsedSavefile, path: number[]) {
