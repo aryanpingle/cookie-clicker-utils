@@ -1,4 +1,7 @@
-import { UPGRADE_CHUNK_SIZE } from './constants.js';
+import {
+    UpgradeIdToChunkIdx,
+    UpgradeIdToChunkPos,
+} from './constants.js';
 import type { ParsedSavefile } from './types.js';
 import { AllUpgrades } from './upgrades/index.js';
 import type { UpgradeName } from './upgrades/types.js';
@@ -9,8 +12,8 @@ export function addUpgrade(game: ParsedSavefile, upgradeName: UpgradeName) {
 }
 
 export function addUpgradeByIndex(game: ParsedSavefile, upgradeIndex: number) {
-    const chunkIdx = Math.floor(upgradeIndex / UPGRADE_CHUNK_SIZE);
-    const intraChunkPosition = upgradeIndex % UPGRADE_CHUNK_SIZE;
+    const chunkIdx = UpgradeIdToChunkIdx[upgradeIndex]!;
+    const intraChunkPosition = UpgradeIdToChunkPos[upgradeIndex]!;
     game.upgrades[chunkIdx]! |= 1 << intraChunkPosition;
 }
 
@@ -23,14 +26,14 @@ export function removeUpgradeByIndex(
     game: ParsedSavefile,
     upgradeIndex: number,
 ) {
-    const chunkIdx = Math.floor(upgradeIndex / UPGRADE_CHUNK_SIZE);
-    const intraChunkPosition = upgradeIndex % UPGRADE_CHUNK_SIZE;
+    const chunkIdx = UpgradeIdToChunkIdx[upgradeIndex]!;
+    const intraChunkPosition = UpgradeIdToChunkPos[upgradeIndex]!;
     game.upgrades[chunkIdx]! &= ~(1 << intraChunkPosition);
 }
 
 export function hasUpgrade(game: ParsedSavefile, upgradeName: UpgradeName) {
     const upgradeIndex = AllUpgrades[upgradeName].id;
-    const chunkIdx = Math.floor(upgradeIndex / UPGRADE_CHUNK_SIZE);
-    const intraChunkPosition = upgradeIndex % UPGRADE_CHUNK_SIZE;
+    const chunkIdx = UpgradeIdToChunkIdx[upgradeIndex]!;
+    const intraChunkPosition = UpgradeIdToChunkPos[upgradeIndex]!;
     return game.upgrades[chunkIdx]! & (1 << intraChunkPosition);
 }

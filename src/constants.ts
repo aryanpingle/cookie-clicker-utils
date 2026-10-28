@@ -5,6 +5,13 @@ export const NUM_UPGRADES = 876;
 export const UPGRADE_CHUNK_SIZE = 30;
 export const NUM_UPGRADE_CHUNKS = Math.ceil(NUM_UPGRADES / UPGRADE_CHUNK_SIZE);
 
+export const UpgradeIdToChunkIdx: Int32Array = new Int32Array(NUM_UPGRADES).map(
+    (_, i) => Math.floor(i / UPGRADE_CHUNK_SIZE),
+);
+export const UpgradeIdToChunkPos: Int32Array = new Int32Array(NUM_UPGRADES).map(
+    (_, i) => i % UPGRADE_CHUNK_SIZE,
+);
+
 export const BUILDING_NAMES = [
     'Cursor',
     'Grandma',
