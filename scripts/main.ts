@@ -15,8 +15,13 @@ const game = parseSavefile('default');
 
 // --- Script-level Constants
 
-const MAXTURNS = 100;
-const MAXTIME = 20 * 60;
+const NUM_EPOCHS = 1;
+
+const PER_EPOCH_TURNS = 100;
+
+const PER_EPOCH_TIME = 20 * 60;
+
+const PER_EPOCH_BEST_N = -1;
 
 // --- Algorithm Constants
 
@@ -72,26 +77,35 @@ function applyPath(game: ParsedSavefile, path: number[]) {
     });
 }
 
-function tryAddingEntry(game: ParsedSavefile, entry: Entry) {
+function tryAddingEntry(
+    nextTurnResults: Record<string, Entry>,
+    game: ParsedSavefile,
+    entry: Entry,
+) {
     const hash = t(generateUID)(game);
-    if (Object.hasOwn(newResults, hash)) {
+    if (Object.hasOwn(nextTurnResults, hash)) {
         timer.start('try replacing entry');
-        const prevEntry = newResults[hash]!;
+        const prevEntry = nextTurnResults[hash]!;
         if (prevEntry.time > entry.time) {
-            newResults[hash] = { ...entry, path: [...entry.path] };
+            nextTurnResults[hash] = { ...entry, path: [...entry.path] };
         } else {
             // noop
         }
         timer.stop();
     } else {
-        newResults[hash] = { ...entry, path: [...entry.path] };
+        nextTurnResults[hash] = { ...entry, path: [...entry.path] };
     }
 }
 
-function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
-    const currentCps = prevResult.cps;
-    const elapsedTime = prevResult.time;
-    const path = prevResult.path;
+function generatePossibilities(
+    game: ParsedSavefile,
+    baseEntry: Entry,
+    turnResults: Record<string, Entry>,
+    TIME_LIMIT: number,
+) {
+    const currentCps = baseEntry.cps;
+    const elapsedTime = baseEntry.time;
+    const path = baseEntry.path;
 
     // Consider each building
     timer.start('Consider each building');
@@ -108,7 +122,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
 
         // Check time constraint
-        if (elapsedTime + timeInSeconds > MAXTIME) continue;
+        if (elapsedTime + timeInSeconds > TIME_LIMIT) continue;
 
         // Purchase the building
         buildingInfo.currentUnits++;
@@ -121,7 +135,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        t(tryAddingEntry)(game, result);
+        t(tryAddingEntry)(turnResults, game, result);
 
         // Remove the building
         buildingInfo.currentUnits--;
@@ -138,7 +152,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
         const timeInSeconds = Math.max(0, Math.round(cost / currentCps));
 
         // Check time constraint
-        if (elapsedTime + timeInSeconds > MAXTIME) return;
+        if (elapsedTime + timeInSeconds > TIME_LIMIT) return;
 
         t(addUpgrade)(game, upgradeIdx);
         path.push((upgradeIdx << 1) + (1 - BIT_FOR_BUILDING));
@@ -150,7 +164,7 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
             cps: newCps,
             time: elapsedTime + timeInSeconds,
         };
-        t(tryAddingEntry)(game, result);
+        t(tryAddingEntry)(turnResults, game, result);
 
         removeUpgrade(game, upgradeIdx);
         path.pop();
@@ -158,34 +172,84 @@ function generatePossibilities(game: ParsedSavefile, prevResult: Entry) {
     timer.stop();
 }
 
-let oldResults: Record<string, Entry> = {
-    '': {
-        path: [],
-        cps: t(calculateCps)(game),
-        time: 0,
-    },
-};
-let newResults: Record<string, Entry> = {};
-const totalResults: Record<string, Entry> = {};
+// Every turn starts with 1 or more starting entries.
+// For all of the starting entries we generate X = all possibilities arising
+// from the entry over 1 <= turns <= N.
+// Return the top K results from X.
+function runEpoch(startingEntries: Array<Entry>, TIME_LIMIT: number) {
+    // TODO: Among the top K, there should be no results that are a subset of
+    // other results. Example: having [..., B0] and [..., B0, B1] is pointless,
+    // just take the latter. Give up the former for another option that offers
+    // more variation in the next epoch.
+    let epochResults: Array<Entry> = [...startingEntries];
 
-for (let turn = 1; turn <= MAXTURNS; ++turn) {
-    for (const result of Object.values(oldResults)) {
-        t(applyPath)(game, result.path);
+    let fromIdx = 0;
+    for (let turn = 1; turn <= PER_EPOCH_TURNS; ++turn) {
+        console.log(`>> Running turn: #${turn}`);
 
-        t(generatePossibilities)(game, result);
+        const currentTurnResults: Record<string, Entry> = {};
+
+        for (let j = fromIdx; j < epochResults.length; ++j) {
+            const baseEntry = epochResults[j]!;
+            t(applyPath)(game, baseEntry.path);
+            t(generatePossibilities)(
+                game,
+                baseEntry,
+                currentTurnResults,
+                TIME_LIMIT,
+            );
+        }
+
+        const results = Object.values(currentTurnResults);
+
+        epochResults = epochResults.concat(results);
+        fromIdx = epochResults.length - results.length;
     }
+    console.log('');
 
-    Object.assign(totalResults, newResults);
+    // Throw away the initial entries
+    epochResults = epochResults.slice(startingEntries.length);
 
-    oldResults = newResults;
-    newResults = {};
+    return epochResults;
 }
 
+function runAllEpochs(initialEntry: Entry) {
+    let results: Array<Entry> = [];
+
+    let startingEntries = [initialEntry];
+    for (let epoch = 1; epoch <= NUM_EPOCHS; epoch++) {
+        console.log(`> Running epoch: #${epoch}`, '\n');
+
+        results = t(runEpoch)(startingEntries, PER_EPOCH_TIME * epoch);
+
+        timer.start('Sort results by CPS + time');
+        // sort by time (secondary)
+        results.sort((entryA, entryB) => entryA.time - entryB.time);
+        // sort by cps (primary)
+        results.sort((entryA, entryB) => -(entryA.cps - entryB.cps));
+        timer.stop();
+
+        // If it's not the last epoch, cull the results
+        if (epoch !== NUM_EPOCHS && PER_EPOCH_BEST_N !== -1) {
+            results = results.slice(0, PER_EPOCH_BEST_N);
+        }
+
+        startingEntries = results;
+    }
+
+    return results;
+}
+
+let initialEntry: Entry = {
+    path: [],
+    cps: t(calculateCps)(game),
+    time: 0,
+};
+
+const results = t(runAllEpochs)(initialEntry);
+
 timer.start('Print results');
-const h = Object.values(totalResults);
-h.sort((a, b) => a.time - b.time); // sort by time (secondary)
-h.sort((a, b) => -(a.cps - b.cps)); // sort by cps (primary)
-console.log(h.slice(0, 5));
+console.log(results.slice(0, 5));
 timer.stop();
 
 timer.stop();
