@@ -1,5 +1,6 @@
 type TieredUpgrade = {
     id: number;
+    name: string;
     type: 'TieredUpgrade';
     qty: number;
     price: number;
@@ -7,6 +8,7 @@ type TieredUpgrade = {
 
 export type GrandmaVariantUpgrade = {
     id: number;
+    name: string;
     type: 'GrandmaVariant';
     price: number;
     relatedBuilding: number;
@@ -14,6 +16,7 @@ export type GrandmaVariantUpgrade = {
 
 type BasicUpgrade = {
     id: number;
+    name: string;
     type: 'pingle';
 };
 

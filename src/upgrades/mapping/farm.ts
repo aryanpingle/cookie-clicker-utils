@@ -1,95 +1,110 @@
 import { n } from '../../number.js';
 import type { Upgrade } from '../types.js';
 
-export const FarmUpgrades = {
-    'Cheap hoes': {
+export const FarmUpgrades = [
+    {
+        name: 'Cheap hoes',
         id: 10,
         type: 'TieredUpgrade',
         price: n(11, 'thousand'),
         qty: 1,
     },
-    'Fertilizer': {
+    {
+        name: 'Fertilizer',
         id: 11,
         type: 'TieredUpgrade',
         price: n(55, 'thousand'),
         qty: 5,
     },
-    'Cookie trees': {
+    {
+        name: 'Cookie trees',
         id: 12,
         type: 'TieredUpgrade',
         price: n(550, 'thousand'),
         qty: 25,
     },
-    'Genetically-modified cookies': {
+    {
+        name: 'Genetically-modified cookies',
         id: 45,
         type: 'TieredUpgrade',
         price: n(55, 'million'),
         qty: 50,
     },
-    'Gingerbread scarecrows': {
+    {
+        name: 'Gingerbread scarecrows',
         id: 111,
         type: 'TieredUpgrade',
         price: n(5.5, 'billion'),
         qty: 100,
     },
-    'Pulsar sprinklers': {
+    {
+        name: 'Pulsar sprinklers',
         id: 193,
         type: 'TieredUpgrade',
         price: n(550, 'billion'),
         qty: 150,
     },
-    'Fudge fungus': {
+    {
+        name: 'Fudge fungus',
         id: 295,
         type: 'TieredUpgrade',
         price: n(550, 'trillion'),
         qty: 200,
     },
-    'Wheat triffids': {
+    {
+        name: 'Wheat triffids',
         id: 308,
         type: 'TieredUpgrade',
         price: n(550, 'quadrillion'),
         qty: 250,
     },
-    'Humane pesticides': {
+    {
+        name: 'Humane pesticides',
         id: 429,
         type: 'TieredUpgrade',
         price: n(550, 'quintillion'),
         qty: 300,
     },
-    'Barnstars': {
+    {
+        name: 'Barnstars',
         id: 481,
         type: 'TieredUpgrade',
         price: n(550, 'sextillion'),
         qty: 350,
     },
-    'Lindworms': {
+    {
+        name: 'Lindworms',
         id: 507,
         type: 'TieredUpgrade',
         price: n(5.5, 'octillion'),
         qty: 400,
     },
-    'Global seed vault': {
+    {
+        name: 'Global seed vault',
         id: 663,
         type: 'TieredUpgrade',
         price: n(55, 'nonillion'),
         qty: 450,
     },
-    'Reverse-veganism': {
+    {
+        name: 'Reverse-veganism',
         id: 701,
         type: 'TieredUpgrade',
         price: n(550, 'decillion'),
         qty: 500,
     },
-    'Cookie mulch': {
+    {
+        name: 'Cookie mulch',
         id: 744,
         type: 'TieredUpgrade',
         price: n(5.5, 'duodecillion'),
         qty: 550,
     },
-    'Self-driving tractors': {
+    {
+        name: 'Self-driving tractors',
         id: 841,
         type: 'TieredUpgrade',
         price: n(55, 'tredecillion'),
         qty: 600,
     },
-} as const satisfies Record<string, Upgrade>;
+] as const satisfies Array<Upgrade>;

@@ -1,3 +1,5 @@
-export const MiscUpgrades = {
-    'Wrinkler ambergris': { id: 875, type: 'pingle' },
-} as const;
+import type { Upgrade } from '../types.js';
+
+export const MiscUpgrades = [
+    { name: 'Wrinkler ambergris', id: 875, type: 'pingle' },
+] as const satisfies Array<Upgrade>;
