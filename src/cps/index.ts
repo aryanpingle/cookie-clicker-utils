@@ -5,6 +5,7 @@ import type { ParsedSavefile } from '../types.js';
 import { getCursorCps } from './cursor.js';
 import { getFarmCps } from './farm.js';
 import { getGrandmaCps } from './grandma.js';
+import { getMineCps } from './mine.js';
 
 export function calculateCps(game: ParsedSavefile, elapsedTime: number = 0) {
     let totalCps = 0;
@@ -18,8 +19,11 @@ export function calculateCps(game: ParsedSavefile, elapsedTime: number = 0) {
     // Farm
     totalCps += timer.withTimer(getFarmCps)(game);
 
+    // Mine
+    totalCps += timer.withTimer(getMineCps)(game);
+
     // Temporary: All the rest
-    for (let i = B.Farm + 1; i < game.buildings.length; ++i) {
+    for (let i = B.Mine + 1; i < game.buildings.length; ++i) {
         const buildingInfo = game.buildings[i]!;
         const baseCps = getBaseCps(i);
         totalCps += baseCps * buildingInfo.currentUnits;
