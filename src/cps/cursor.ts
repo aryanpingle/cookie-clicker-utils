@@ -11,7 +11,7 @@ export function getCursorCps(game: ParsedSavefile) {
     let cps = baseCps;
     let addition = 0;
 
-    if (hasUpgrade(game, U.REINFORCED_MEMBRANE)) cps *= 2;
+    if (hasUpgrade(game, U.REINFORCED_INDEX_FINGER)) cps *= 2;
     if (hasUpgrade(game, U.CARPAL_TUNNEL_PREVENTION_CREAM)) cps *= 2;
     if (hasUpgrade(game, U.AMBIDEXTROUS)) cps *= 2;
 
