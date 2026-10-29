@@ -10,6 +10,7 @@ import type { ParsedSavefile } from '../src/types.js';
 import { parseSavefile } from './utils.js';
 import { getFrontierUpgrades } from '../src/upgrades/unlocks/index.js';
 import { timer } from '../src/timer.js';
+import { printSteps } from './result.js';
 
 const game = parseSavefile('default');
 
@@ -248,9 +249,8 @@ let initialEntry: Entry = {
 
 const results = t(runAllEpochs)(initialEntry);
 
-timer.start('Print results');
-console.log(results.slice(0, 5));
-timer.stop();
-
 timer.stop();
 timer.print('.tmp/timing.txt');
+
+applyPath(game, []);
+printSteps(game, results[0]!.path);
